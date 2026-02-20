@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="WeatherIQ — Professional ML-powered weather intelligence. Live conditions, 24-hour forecasts, and smart clothing recommendations." />
+  <meta name="theme-color" content="#080B12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>WeatherIQ — Intelligent Weather Platform</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='animations.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+  <!-- ── CANVAS BACKGROUND ──────────────────────────────────────────────── -->
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <!-- ── AMBIENT GLOW LAYERS ────────────────────────────────────────────── -->
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient__orb ambient__orb--a"></div>
+    <div class="ambient__orb ambient__orb--b"></div>
+    <div class="ambient__orb ambient__orb--c"></div>
+  </div>
+
+  <!-- ── LOADER ──────────────────────────────────────────────────────────── -->
+  <div id="loader" role="status" aria-label="Loading weather data">
+    <div class="loader__inner">
+      <div class="loader__ring">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle class="loader__track" cx="32" cy="32" r="28" stroke-width="2"/>
+          <circle class="loader__arc"   cx="32" cy="32" r="28" stroke-width="2"
+            stroke-linecap="round"
+            stroke-dasharray="44 132"/>
+        </svg>
+      </div>
+      <div class="loader__label" id="loader-label">Initializing…</div>
+    </div>
+  </div>
+
+  <!-- ── TOASTS ──────────────────────────────────────────────────────────── -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ── NAVIGATION ─────────────────────────────────────────────────────── -->
+  <header class="nav" role="banner">
+    <div class="nav__inner">
+      <a href="/" class="nav__logo" aria-label="WeatherIQ home">
+        <div class="nav__logo-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10"/>
+            <path d="M18 6l4-4M22 2l-4 4"/>
+            <path d="M7 12a5 5 0 0 1 5-5"/>
+            <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <span class="nav__wordmark">Weather<em>IQ</em></span>
+      </a>
+
+      <nav class="nav__center" aria-label="Platform info">
+        <span class="nav__chip">
+          <span class="nav__chip-dot" aria-hidden="true"></span>
+          ML-Powered
+        </span>
+      </nav>
+
+      <div class="nav__actions">
+        <button class="nav__icon-btn" id="btn-dark" aria-label="Toggle theme" title="Toggle dark mode">
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ────────────────────────────────────────────────────────────── -->
+  <main id="main" class="main">
+
+    <!-- HERO ──────────────────────────────────────────────────────────────── -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__content">
+
+        <div class="hero__badge reveal-up" style="--delay:0.05s">
+          <span class="hero__badge-line"></span>
+          <span>Real-Time Intelligence</span>
+          <span class="hero__badge-line"></span>
+        </div>
+
+        <h1 class="hero__title reveal-up" id="hero-title" style="--delay:0.15s">
+          Weather,
+          <br><span class="hero__title-sub">decoded by&nbsp;<mark class="hero__hl" id="hero-hl">machines</mark></span>
+        </h1>
+
+        <p class="hero__body reveal-up" style="--delay:0.28s">
+          Live conditions fused with ML — 24-hour forecasts, adaptive themes,
+          and clothing intelligence. Professional-grade, mobile-first.
+        </p>
+
+        <!-- Search -->
+        <div class="search-wrap reveal-up" style="--delay:0.4s" role="search">
+          <form id="search-form" novalidate autocomplete="off" aria-label="City weather search">
+            <div class="search-box" id="search-box">
+              <label for="city-input" class="search-box__icon-label" aria-label="Search">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+              </label>
+              <input
+                type="text"
+                id="city-input"
+                name="city"
+                placeholder="Enter any city worldwide…"
+                maxlength="64"
+                autocorrect="off"
+                autocapitalize="words"
+                spellcheck="false"
+                aria-label="City name"
+                aria-describedby="search-hint search-error"
+              />
+              <button type="submit" class="search-box__btn" id="search-btn" aria-label="Analyze weather">
+                <span class="search-box__btn-text">Analyze</span>
+                <span class="search-box__btn-spin" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </form>
+
+          <div class="search-error" id="search-error" role="alert" aria-live="assertive">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="search-error-text">Please enter a city name.</span>
+          </div>
+
+          <div class="quick-cities reveal-up" style="--delay:0.55s" aria-label="Quick city shortcuts">
+            <span class="quick-cities__label">Popular</span>
+            <div class="quick-cities__list" id="quick-list"></div>
+          </div>
+        </div>
+
+        <!-- Data hint -->
+        <p class="hero__hint reveal-up" id="search-hint" style="--delay:0.68s">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Press <kbd>Ctrl+K</kbd> to focus search at any time
+        </p>
+
+      </div>
+
+      <!-- Floating instrument panel on desktop -->
+      <div class="hero__instrument reveal-up" style="--delay:0.5s" aria-hidden="true">
+        <div class="instrument">
+          <div class="instrument__row">
+            <span class="instrument__label">Condition</span>
+            <span class="instrument__val" id="inst-condition">—</span>
+          </div>
+          <div class="instrument__divider"></div>
+          <div class="instrument__row">
+            <span class="instrument__label">ML Confidence</span>
+            <span class="instrument__val accent" id="inst-conf">—</span>
+          </div>
+          <div class="instrument__divider"></div>
+          <div class="instrument__row">
+            <span class="instrument__label">24h Trend</span>
+            <span class="instrument__val" id="inst-trend">—</span>
+          </div>
+          <div class="instrument__divider"></div>
+          <div class="instrument__row">
+            <span class="instrument__label">Clothing</span>
+            <span class="instrument__val" id="inst-clothing">—</span>
+          </div>
+          <div class="instrument__footer">
+            <span class="instrument__label">WEATHERIQ ML ENGINE v1.0</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RESULTS ───────────────────────────────────────────────────────────── -->
+    <section id="results-section" class="results" aria-label="Weather analysis results" hidden>
+      <div class="results__inner">
+
+        <!-- ── MAIN WEATHER DISPLAY ──────────────────────────────────────── -->
+        <div class="section-header">
+          <span class="section-tag">Live Conditions</span>
+        </div>
+
+        <div class="weather-display" id="weather-card">
+
+          <div class="weather-display__left">
+            <div class="weather-display__location">
+              <h2 class="weather-display__city" id="city-name">—</h2>
+              <span class="weather-display__country" id="country-name"></span>
+            </div>
+
+            <div class="weather-display__temp-wrap">
+              <div class="weather-display__temp">
+                <span class="temp-num" id="main-temp">—</span>
+                <span class="temp-unit">°C</span>
+              </div>
+              <div class="weather-display__desc-wrap">
+                <p class="weather-display__desc" id="weather-desc">—</p>
+                <p class="weather-display__feels" id="weather-feels">Feels like —°C</p>
+              </div>
+            </div>
+
+            <div class="weather-tag" id="weather-class-tag">
+              <span class="weather-tag__dot" aria-hidden="true"></span>
+              <span id="weather-class-label">—</span>
+            </div>
+          </div>
+
+          <div class="weather-display__right">
+            <!-- Stats grid -->
+            <div class="stats-grid" role="list" aria-label="Weather measurements">
+
+              <div class="stat-item" role="listitem">
+                <div class="stat-item__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
+                </div>
+                <div class="stat-item__info">
+                  <span class="stat-item__label">Humidity</span>
+                  <span class="stat-item__value" id="stat-humidity">—<small>%</small></span>
+                </div>
+              </div>
+
+              <div class="stat-item" role="listitem">
+                <div class="stat-item__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg>
+                </div>
+                <div class="stat-item__info">
+                  <span class="stat-item__label">Wind</span>
+                  <span class="stat-item__value" id="stat-wind">—<small>km/h</small></span>
+                </div>
+              </div>
+
+              <div class="stat-item" role="listitem">
+                <div class="stat-item__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2v6m0 0l-2-2m2 2l2-2"/><circle cx="12" cy="14" r="4"/><path d="M12 18v4"/></svg>
+                </div>
+                <div class="stat-item__info">
+                  <span class="stat-item__label">Pressure</span>
+                  <span class="stat-item__value" id="stat-pressure">—<small>hPa</small></span>
+                </div>
+              </div>
+
+              <div class="stat-item" role="listitem">
+                <div class="stat-item__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <div class="stat-item__info">
+                  <span class="stat-item__label">Visibility</span>
+                  <span class="stat-item__value" id="stat-visibility">—<small>km</small></span>
+                </div>
+              </div>
+
+              <div class="stat-item" role="listitem">
+                <div class="stat-item__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+                </div>
+                <div class="stat-item__info">
+                  <span class="stat-item__label">UV Index</span>
+                  <span class="stat-item__value" id="stat-uv">—</span>
+                </div>
+              </div>
+
+              <div class="stat-item" role="listitem">
+                <div class="stat-item__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>
+                </div>
+                <div class="stat-item__info">
+                  <span class="stat-item__label">Cloud Cover</span>
+                  <span class="stat-item__value" id="stat-cloud">—<small>%</small></span>
+                </div>
+              </div>
+
+            </div><!-- /stats-grid -->
+
+            <div class="data-source" id="data-source">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span id="source-label">—</span>
+            </div>
+          </div>
+
+        </div><!-- /weather-display -->
+
+        <!-- ── ML ANALYSIS ────────────────────────────────────────────────── -->
+        <div class="section-header" style="margin-top: 48px;">
+          <span class="section-tag">Machine Learning Analysis</span>
+        </div>
+
+        <div class="ml-grid">
+
+          <!-- CLASSIFICATION -->
+          <article class="ml-card" aria-labelledby="cls-heading">
+            <header class="ml-card__header">
+              <div class="ml-card__title-row">
+                <div class="ml-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <h3 class="ml-card__name" id="cls-heading">Classification</h3>
+              </div>
+              <span class="ml-card__model">LogisticReg</span>
+            </header>
+
+            <div class="cls-display">
+              <div class="cls-icon-box" id="cls-icon-box" aria-hidden="true">
+                <!-- dynamic SVG -->
+              </div>
+              <div>
+                <div class="cls-value" id="cls-value">—</div>
+                <div class="cls-pattern" id="cls-pattern">—</div>
+              </div>
+            </div>
+
+            <div class="confidence-row" aria-label="Confidence">
+              <div class="confidence-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="conf-track">
+                <div class="confidence-fill" id="conf-fill"></div>
+              </div>
+              <span class="confidence-label" id="conf-label">0%</span>
+            </div>
+
+            <div class="prob-bars" id="cls-probs" role="list" aria-label="Class probabilities"></div>
+          </article>
+
+          <!-- CLOTHING -->
+          <article class="ml-card" aria-labelledby="cloth-heading">
+            <header class="ml-card__header">
+              <div class="ml-card__title-row">
+                <div class="ml-card__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20.38 3.46L16 2l-4 4-4-4-4.38 1.46a1 1 0 00-.62.94v2.2a1 1 0 00.57.9L6 8.5V20a2 2 0 002 2h8a2 2 0 002-2V8.5l2.43-1.1a1 1 0 00.57-.9v-2.2a1 1 0 00-.62-.94z"/></svg>
+                </div>
+                <h3 class="ml-card__name" id="cloth-heading">Clothing Advisor</h3>
+              </div>
+              <span class="ml-card__model">5-Class LR</span>
+            </header>
+
+            <div class="clothing-display">
+              <div class="clothing-icon-box" id="cloth-icon-box" aria-hidden="true"></div>
+              <div class="clothing-info">
+                <div class="clothing-name" id="cloth-name">—</div>
+                <p class="clothing-reason" id="cloth-reason">—</p>
+                <div class="clothing-conf" id="cloth-conf">—</div>
+              </div>
+            </div>
+
+            <div class="prob-bars" id="cloth-probs" role="list" aria-label="Clothing probabilities"></div>
+          </article>
+
+        </div><!-- /ml-grid -->
+
+        <!-- ── FORECAST CHART ──────────────────────────────────────────────── -->
+        <div class="section-header" style="margin-top: 48px;">
+          <span class="section-tag">24-Hour Temperature Forecast</span>
+          <span class="section-model">LinearRegression</span>
+        </div>
+
+        <div class="forecast-card" aria-label="Temperature forecast">
+
+          <div class="forecast-stats" role="list">
+
+            <div class="forecast-stat" role="listitem">
+              <span class="forecast-stat__label">Trend</span>
+              <div class="forecast-stat__val forecast-stat__val--trend" id="fc-trend">
+                <span id="fc-trend-icon" aria-hidden="true"></span>
+                <span id="fc-trend-label">—</span>
+              </div>
+            </div>
+
+            <div class="forecast-stat" role="listitem">
+              <span class="forecast-stat__label">24h Delta</span>
+              <div class="forecast-stat__val" id="fc-delta">—</div>
+            </div>
+
+            <div class="forecast-stat" role="listitem">
+              <span class="forecast-stat__label">Min</span>
+              <div class="forecast-stat__val" id="fc-min">—</div>
+            </div>
+
+            <div class="forecast-stat" role="listitem">
+              <span class="forecast-stat__label">Max</span>
+              <div class="forecast-stat__val" id="fc-max">—</div>
+            </div>
+
+            <div class="forecast-stat" role="listitem">
+              <span class="forecast-stat__label">R² Score</span>
+              <div class="forecast-stat__val accent" id="fc-conf">—</div>
+            </div>
+
+          </div>
+
+          <div class="chart-container" role="img" aria-label="24-hour temperature line chart">
+            <canvas id="temp-chart"></canvas>
+          </div>
+
+        </div>
+
+        <!-- ── ML METRICS ─────────────────────────────────────────────────── -->
+        <div class="section-header" style="margin-top: 48px;">
+          <span class="section-tag">Model Training Metrics</span>
+          <span class="section-model">scikit-learn</span>
+        </div>
+
+        <div class="metrics-strip" role="list" id="metrics-strip" aria-label="ML model metrics"></div>
+
+        <!-- ── GALLERY ────────────────────────────────────────────────────── -->
+        <div class="section-header" style="margin-top: 48px;">
+          <span class="section-tag">City &amp; Atmosphere</span>
+          <span class="section-model">Live Images</span>
+        </div>
+
+        <div class="gallery-card" aria-label="City image gallery">
+          <div class="gallery" id="gallery">
+            <div class="gallery__track" id="gallery-track">
+              <div class="gallery__empty">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <p>Search a city to load images</p>
+              </div>
+            </div>
+
+            <div class="gallery__controls">
+              <button class="gallery__btn gallery__btn--prev" id="gal-prev" aria-label="Previous image">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div class="gallery__dots" id="gallery-dots" role="tablist" aria-label="Gallery navigation"></div>
+              <button class="gallery__btn gallery__btn--next" id="gal-next" aria-label="Next image">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /results__inner -->
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ──────────────────────────────────────────────────────────── -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer__inner">
+      <div class="footer__brand">Weather<em>IQ</em></div>
+      <p class="footer__desc">
+        Real-time weather intelligence fused with machine learning.
+        Live data · ML forecasting · Adaptive UI.
+      </p>
+      <div class="footer__tech" aria-label="Technologies">
+        <span>Flask</span><span>scikit-learn</span><span>Pandas</span>
+        <span>NumPy</span><span>Chart.js</span><span>Canvas API</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
