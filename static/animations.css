@@ -1,0 +1,151 @@
+/*
+ * WeatherIQ — Animations
+ * GPU-accelerated (transform + opacity only).
+ * Purposeful, minimal, professional.
+ */
+
+/* ─── ENTRY REVEALS ──────────────────────────────────────────── */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes revealDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes revealScale {
+  from { opacity: 0; transform: scale(0.92) translateY(14px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── HERO TITLE ─────────────────────────────────────────────── */
+@keyframes titleReveal {
+  from { opacity: 0; transform: translateY(40px) skewY(1deg); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0) skewY(0); filter: blur(0); }
+}
+
+@keyframes hlUnderline {
+  from { transform: scaleX(0); transform-origin: left; }
+  to   { transform: scaleX(1); transform-origin: left; }
+}
+
+/* ─── CARDS ──────────────────────────────────────────────────── */
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── NUMBERS ────────────────────────────────────────────────── */
+@keyframes numberPop {
+  0%   { opacity: 0; transform: scale(0.7) translateY(10px); }
+  70%  { transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ─── LOOPING ────────────────────────────────────────────────── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinArc {
+  0%   { stroke-dasharray: 0 176; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 88 88; stroke-dashoffset: -22; }
+  100% { stroke-dasharray: 0 176; stroke-dashoffset: -176; }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes ambientDrift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -20px) scale(1.05); }
+  66%  { transform: translate(-20px, 15px) scale(0.97); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ─── FEEDBACK ───────────────────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%  { transform: translateX(-9px); }
+  40%  { transform: translateX(8px); }
+  60%  { transform: translateX(-6px); }
+  80%  { transform: translateX(5px); }
+}
+
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(110%) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes toastSlideOut {
+  from { opacity: 1; transform: translateX(0); max-height: 80px; margin-bottom: 8px; }
+  to   { opacity: 0; transform: translateX(110%); max-height: 0; margin-bottom: 0; }
+}
+
+@keyframes progressFill {
+  0%   { width: 0%; }
+  40%  { width: 50%; }
+  80%  { width: 82%; }
+  100% { width: 100%; }
+}
+
+/* ─── BARS ───────────────────────────────────────────────────── */
+@keyframes barGrow {
+  from { width: 0% !important; }
+}
+
+@keyframes confGrow {
+  from { width: 0%; }
+}
+
+/* ─── THEME ATMOSPHERE ───────────────────────────────────────── */
+/* Used as body classes for theme-specific enhancements */
+.theme-hot    .ambient__orb { animation-duration: 14s; }
+.theme-cold   .ambient__orb { animation-duration: 22s; }
+.theme-normal .ambient__orb { animation-duration: 18s; }
+
+/* ─── STAGGER DELAYS ─────────────────────────────────────────── */
+.s-d0  { animation-delay: 0.00s; }
+.s-d1  { animation-delay: 0.06s; }
+.s-d2  { animation-delay: 0.12s; }
+.s-d3  { animation-delay: 0.18s; }
+.s-d4  { animation-delay: 0.24s; }
+.s-d5  { animation-delay: 0.30s; }
+.s-d6  { animation-delay: 0.36s; }
+
+/* ─── SCROLL REVEAL CLASSES ──────────────────────────────────── */
+.reveal-up {
+  opacity: 0;
+  animation: revealUp 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay, 0s);
+}
+
+.card-enter {
+  opacity: 0;
+  animation: cardEnter 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay, 0s);
+}
